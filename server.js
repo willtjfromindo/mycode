@@ -223,8 +223,11 @@ app.get('/api/news-incidents', async (req, res) => {
         language: 'en',
         apiKey: CURRENTS_API_KEY
       },
-      timeout: 30000
+      timeout: 10000 // Reduced to 10 seconds for faster error handling
     });
+    
+    console.log('📰 Currents API response status:', response.status);
+    console.log('📰 Articles received:', response.data?.news?.length || 0);
 
     const articles = response.data.news || [];
     
@@ -269,7 +272,8 @@ app.get('/api/news-incidents', async (req, res) => {
     
     res.json(result);
   } catch (error) {
-    console.error('Error fetching news incidents:', error.message);
+    console.error('❌ Error fetching news incidents:', error.message);
+    console.error('Full error:', error.response?.data || error);
     res.json({
       incidents: [],
       lastChecked: Date.now(),
