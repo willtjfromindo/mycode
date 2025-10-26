@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join or Create Family - FamilyCircle</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 500px;
+      padding: 48px 40px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo h1 {
+      font-size: 32px;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 15px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+      padding: 24px;
+      background: #f9f9f9;
+      border-radius: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #666;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      margin-bottom: 12px;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f0f0f0;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      color: #999;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .error-message {
+      background: #ffe0e0;
+      color: #d32f2f;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success-message {
+      background: #e0f7e0;
+      color: #2e7d32;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .code-display {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .code-display h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .code-display .code {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+    }
+
+    .code-display button {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid white;
+      color: white;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .code-display button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .hint {
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    #create-view, #join-view, #success-view {
+      display: none;
+    }
+
+    #choice-view {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>👥 FamilyCircle</h1>
+      <p>Set up your family circle</p>
+    </div>
+
+    <div class="error-message" id="error-message"></div>
+    <div class="success-message" id="success-message"></div>
+
+    <!-- Choice View -->
+    <div id="choice-view">
+      <div class="section">
+        <div class="section-title">👨‍👩‍👧‍👦 Join Existing Family</div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+          Have a family code? Enter it to join your family circle.
+        </p>
+        <button class="btn btn-primary" onclick="showJoinView()">
+          Join with Code
+        </button>
+      </div>
+
+      <div class="divider">OR</div>
+
+      <div class="section">
+        <div class="section-title">✨ Create New Family</div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+          Start your own family circle and invite others to join.
+        </p>
+        <button class="btn btn-secondary" onclick="createNewFamily()">
+          Create My Family
+        </button>
+      </div>
+    </div>
+
+    <!-- Join View -->
+    <div id="join-view">
+      <div class="section">
+        <div class="section-title">🔑 Enter Family Code</div>
+        
+        <div class="input-group">
+          <label>6-Character Family Code</label>
+          <input 
+            type="text" 
+            id="join-code" 
+            placeholder="ABC123"
+            maxlength="6"
+            style="text-transform: uppercase;">
+        </div>
+
+        <button class="btn btn-primary" onclick="joinFamily()" id="join-btn">
+          Join Family
+        </button>
+        <button class="btn btn-secondary" onclick="showChoiceView()">
+          ← Back
+        </button>
+
+        <div class="hint">
+          Ask your family member for their 6-character code
+        </div>
+      </div>
+    </div>
+
+    <!-- Success View (After Creating Family) -->
+    <div id="success-view">
+      <div class="code-display">
+        <h3>🎉 Your Family Code</h3>
+        <div class="code" id="family-code">------</div>
+        <button onclick="copyCode()">📋 Copy Code</button>
+      </div>
+
+      <div style="background: #e3f2fd; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+        <p style="color: #1976d2; font-size: 14px; margin-bottom: 8px; font-weight: 600;">
+          💡 Share this code with family members
+        </p>
+        <p style="color: #1976d2; font-size: 13px;">
+          They'll enter this code when they sign up to join your family circle and see your location.
+        </p>
+      </div>
+
+      <button class="btn btn-primary" onclick="continueToMap()">
+        Continue to Map →
+      </button>
+    </div>
+
+    <!-- Success View (After Joining Family) -->
+    <div id="joined-view" style="display: none;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+        <h2 style="color: #333; margin-bottom: 8px;">Joined Successfully!</h2>
+        <p style="color: #666; font-size: 15px;" id="joined-family-name">
+          You're now part of the family circle
+        </p>
+      </div>
+
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+        <p style="color: #666; font-size: 14px; margin-bottom: 8px;">
+          <strong>Family Members:</strong>
+        </p>
+        <div id="family-members-list" style="color: #666; font-size: 14px;"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="continueToMap()">
+        Continue to Map →
+      </button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getDatabase, ref, set, get, query, orderByChild, equalTo, update, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+    // Your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyGphPTMLX6q1uVXVr7RBYkmU4WRLIi1s",
+      authDomain: "safestep-9756c.firebaseapp.com",
+      databaseURL: "https://safestep-9756c-default-rtdb.firebaseio.com",
+      projectId: "safestep-9756c",
+      storageBucket: "safestep-9756c.firebasestorage.app",
+      messagingSenderId: "1012843646509",
+      appId: "1:1012843646509:web:5e14122c3238ce7492b2a4",
+      measurementId: "G-Q29HR2433P"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // Make globally available
+    window.firebaseAuth = auth;
+    window.firebaseDatabase = database;
+    window.firebaseRef = ref;
+    window.firebaseSet = set;
+    window.firebaseGet = get;
+    window.firebaseQuery = query;
+    window.firebaseOrderByChild = orderByChild;
+    window.firebaseEqualTo = equalTo;
+    window.firebaseUpdate = update;
+    window.firebasePush = push;
+
+    // Check if user is logged in
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // Not logged in, redirect to auth page
+        window.location.href = '/auth.html';
+      } else {
+        window.currentUser = user;
+        
+        // Check if user already has a family
+        const userSnapshot = await get(ref(database, 'users/' + user.uid));
+        if (userSnapshot.exists() && userSnapshot.val().familyId) {
+          // Already has family, go to map
+          window.location.href = '/index.html';
+        }
+      }
+    });
+  </script>
+
+  <script>
+    function showError(message) {
+      const errorEl = document.getElementById('error-message');
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      document.getElementById('success-message').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const successEl = document.getElementById('success-message');
+      successEl.textContent = message;
+      successEl.style.display = 'block';
+      document.getElementById('error-message').style.display = 'none';
+    }
+
+    function hideMessages() {
+      document.getElementById('error-message').style.display = 'none';
+      document.getElementById('success-message').style.display = 'none';
+    }
+
+    function showChoiceView() {
+      document.getElementById('choice-view').style.display = 'block';
+      document.getElementById('join-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'none';
+      document.getElementById('joined-view').style.display = 'none';
+      hideMessages();
+    }
+
+    function showJoinView() {
+      document.getElementById('choice-view').style.display = 'none';
+      document.getElementById('join-view').style.display = 'block';
+      hideMessages();
+    }
+
+    // Generate random 6-character family code
+    function generateFamilyCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No confusing chars
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+
+    // Create new family
+    async function createNewFamily() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+      hideMessages();
+
+      try {
+        const user = window.currentUser;
+        
+        // Generate unique family code
+        let familyCode = generateFamilyCode();
+        
+        // Check if code already exists (very unlikely but check anyway)
+        const familiesRef = window.firebaseRef(window.firebaseDatabase, 'families');
+        const codeQuery = window.firebaseQuery(familiesRef, window.firebaseOrderByChild('code'), window.firebaseEqualTo(familyCode));
+        const codeSnapshot = await window.firebaseGet(codeQuery);
+        
+        // If code exists, generate a new one (rare)
+        while (codeSnapshot.exists()) {
+          familyCode = generateFamilyCode();
+          const newCodeQuery = window.firebaseQuery(familiesRef, window.firebaseOrderByChild('code'), window.firebaseEqualTo(familyCode));
+          const newCodeSnapshot = await window.firebaseGet(newCodeQuery);
+          if (!newCodeSnapshot.exists()) break;
+        }
+
+        // Create family
+        const familyId = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'families')).key;
+        const familyData = {
+          code: familyCode,
+          name: `${user.displayName || user.email.split('@')[0]}'s Family`,
+          owner: user.uid,
+          members: {
+            [user.uid]: true
+          },
+          createdAt: Date.now()
+        };
+
+        await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'families/' + familyId), familyData);
+
+        // Update user with family ID
+        await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid), {
+          familyId: familyId
+        });
+
+        console.log('✅ Family created:', familyCode);
+
+        // Show success view
+        document.getElementById('choice-view').style.display = 'none';
+        document.getElementById('success-view').style.display = 'block';
+        document.getElementById('family-code').textContent = familyCode;
+        window.currentFamilyCode = familyCode;
+
+      } catch (error) {
+        console.error('Error creating family:', error);
+        showError('Failed to create family. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Create My Family';
+      }
+    }
+
+    // Join existing family
+    async function joinFamily() {
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      const btn = document.getElementById('join-btn');
+      
+      if (!code || code.length !== 6) {
+        showError('Please enter a 6-character code');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Joining...';
+      hideMessages();
+
+      try {
+        const user = window.currentUser;
+
+        // Search for family with this code
+        const familiesRef = window.firebaseRef(window.firebaseDatabase, 'families');
+        const codeQuery = window.firebaseQuery(familiesRef, window.firebaseOrderByChild('code'), window.firebaseEqualTo(code));
+        const snapshot = await window.firebaseGet(codeQuery);
+
+        if (!snapshot.exists()) {
+          showError('Invalid code. Please check and try again.');
+          btn.disabled = false;
+          btn.textContent = 'Join Family';
+          return;
+        }
+
+        // Get family ID and data
+        const familyId = Object.keys(snapshot.val())[0];
+        const familyData = snapshot.val()[familyId];
+
+        // Add user to family
+        await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'families/' + familyId + '/members'), {
+          [user.uid]: true
+        });
+
+        // Update user with family ID
+        await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid), {
+          familyId: familyId
+        });
+
+        console.log('✅ Joined family:', familyId);
+
+        // Get family members count
+        const memberCount = Object.keys(familyData.members).length + 1; // +1 for this user
+
+        // Show success view
+        document.getElementById('join-view').style.display = 'none';
+        document.getElementById('joined-view').style.display = 'block';
+        document.getElementById('joined-family-name').textContent = `You joined ${familyData.name}!`;
+        document.getElementById('family-members-list').textContent = `${memberCount} member${memberCount > 1 ? 's' : ''} in this family`;
+
+      } catch (error) {
+        console.error('Error joining family:', error);
+        showError('Failed to join family. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Join Family';
+      }
+    }
+
+    // Copy code to clipboard
+    function copyCode() {
+      const code = window.currentFamilyCode || document.getElementById('family-code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+
+    // Continue to map
+    function continueToMap() {
+      window.location.href = '/index.html';
+    }
+
+    // Allow Enter key to join
+    document.addEventListener('DOMContentLoaded', () => {
+      const joinInput = document.getElementById('join-code');
+      if (joinInput) {
+        joinInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            joinFamily();
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+

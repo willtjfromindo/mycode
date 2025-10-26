@@ -1,0 +1,2943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamilyCircle - Location Sharing</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #F2E0C8;
+      overflow: hidden;
+    }
+
+      #container {
+        display: flex;
+        height: 100vh;
+      }
+
+    #sidebar {
+      width: 340px;
+      background: #F8F4F0;
+      box-shadow: 2px 0 10px rgba(139, 69, 19, 0.15);
+      padding: 24px;
+      overflow-y: auto;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+
+    #sidebar h1 {
+      font-size: 28px;
+      color: #8B4513;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .app-logo {
+      height: 90px;
+      max-width: 300px;
+      margin: 10px 0 15px 0;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      border-radius: 20px;
+    }
+
+    .app-logo:hover {
+      transform: scale(1.05);
+    }
+
+    .logo-container {
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    #sidebar .subtitle {
+      color: #A0522D;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .member-card {
+      background: linear-gradient(135deg, #D2B48C 0%, #BC9A6A 100%);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      color: white;
+      box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+      transition: transform 0.2s;
+      overflow: visible;
+      min-height: auto;
+    }
+
+    .member-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(139, 69, 19, 0.4);
+    }
+
+    .member-card.orange {
+      background: linear-gradient(135deg, #CD853F 0%, #B8860B 100%);
+      box-shadow: 0 4px 12px rgba(184, 134, 11, 0.4);
+    }
+
+    .member-card.orange:hover {
+      box-shadow: 0 6px 16px rgba(184, 134, 11, 0.5);
+    }
+
+    .member-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #6c757d;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .member-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .member-location {
+      font-size: 14px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .location-icon {
+      font-size: 16px;
+    }
+
+    .risk-score {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .risk-score-number {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .risk-level {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+
+    .risk-details {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 8px;
+    }
+
+    /* Expanded Danger Explanation */
+    .danger-explanation-expanded {
+      margin-top: 12px;
+      padding: 14px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      border-left: 3px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .danger-explanation-expanded p {
+      margin: 8px 0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .danger-explanation-expanded strong {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .member-card.clickable {
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .member-card.clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(139, 69, 19, 0.5);
+    }
+
+    .member-card.expanded {
+      padding-bottom: 20px;
+    }
+
+    #map {
+      flex: 1;
+      height: 100vh;
+    }
+
+    .legend {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .legend h3 {
+      font-size: 14px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot-purple {
+      background: #667eea;
+    }
+
+    .dot-pink {
+      background: #f5576c;
+    }
+
+    /* Custom marker styles */
+    .custom-marker {
+      background: transparent;
+      border: none;
+    }
+
+    .marker-pin {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border: 3px solid white;
+    }
+
+    .marker-purple {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .marker-pink {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .marker-green {
+      background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    }
+
+    .member-card.green {
+      background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+      box-shadow: 0 4px 12px rgba(86, 171, 47, 0.4);
+    }
+
+    .member-card.green:hover {
+      box-shadow: 0 6px 16px rgba(86, 171, 47, 0.5);
+    }
+
+    .dot-green {
+      background: #56ab2f;
+    }
+
+    /* Collapsible Section Styles */
+    .section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 8px;
+      cursor: pointer;
+      background: #f9f9f9;
+      border-radius: 8px;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    .section-header:hover {
+      background: #F0E6D2;
+    }
+
+    .arrow {
+      font-size: 14px;
+      transition: transform 0.3s;
+      display: inline-block;
+    }
+
+    .arrow.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 14px;
+      flex: 1;
+      color: #333;
+    }
+
+    .count {
+      color: #999;
+      font-size: 13px;
+    }
+
+    .section-content {
+      max-height: 2000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+      opacity: 1;
+    }
+
+    .section-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    /* Blue Location Card Styles */
+    .location-card {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: #333;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+      box-shadow: 0 4px 12px rgba(30, 60, 114, 0.4);
+      transition: transform 0.2s;
+    }
+
+    .location-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(30, 60, 114, 0.5);
+    }
+
+    .location-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .location-name {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .location-name-text {
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .location-name-text:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .location-name-input {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1e3c72;
+      border: 2px solid white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      max-width: 200px;
+    }
+
+    .location-name-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .remove-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+
+    .remove-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .location-risk {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .location-details {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 32px 16px;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    /* Add Location Button */
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .add-location-section {
+      margin-top: 24px;
+    }
+
+    #search-box {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+
+    #search-box input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    #search-box button {
+      padding: 8px 16px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    #search-box button:first-of-type {
+      background: #667eea;
+      color: white;
+    }
+
+    #search-box button:last-of-type {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    #map-click-hint {
+      margin-top: 12px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      border-radius: 4px;
+      color: #1976d2;
+      font-size: 13px;
+    }
+
+    .dot-blue {
+      background: #2a5298;
+    }
+
+    /* Family Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9998;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 9999;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 24px 24px 16px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-close {
+      background: #f0f0f0;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #e0e0e0;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .family-code-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .family-code-section h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .family-code-section .code {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+    }
+
+    .family-code-section button {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid white;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .family-code-section button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section h3 {
+      font-size: 14px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .family-member-item {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .family-member-item .icon {
+      font-size: 24px;
+    }
+
+    .family-member-item .info {
+      flex: 1;
+    }
+
+    .family-member-item .name {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .family-member-item .status {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .modal-hint {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 8px;
+      color: #1976d2;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Heatmap Toggle Button */
+    .heatmap-toggle {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .heatmap-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+    }
+
+    .heatmap-toggle.active {
+      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .toggle-text {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* News Status Box */
+    .news-status-box {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-left: 4px solid #4caf50;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #2e7d32;
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+    }
+
+    .news-status-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .news-status-meta {
+      font-size: 11px;
+      color: #558b2f;
+      opacity: 0.9;
+    }
+
+    /* Incident Details List */
+    .incidents-list {
+      margin-top: 12px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .incident-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .incident-item:last-child {
+      border-bottom: none;
+    }
+
+    .incident-title {
+      font-weight: 600;
+      color: #333;
+      font-size: 13px;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .incident-description {
+      color: #666;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .incident-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #999;
+    }
+
+    .incident-source {
+      font-weight: 500;
+    }
+
+    .incident-time {
+      font-style: italic;
+    }
+
+    /* Chat Bubble Styles */
+    .chat-bubble {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .chat-bubble:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+    }
+
+    .chat-window {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 350px;
+      height: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 1001;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background: #f8f9fa;
+    }
+
+    .message {
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .message.user {
+      background: #667eea;
+      color: white;
+      margin-left: 40px;
+    }
+
+    .message.bot {
+      background: white;
+      color: #333;
+      margin-right: 40px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .chat-input-container {
+      padding: 12px;
+      background: white;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .chat-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      font-size: 13px;
+      outline: none;
+    }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        /* Danger explanation dropdown styles */
+        .danger-explanation {
+            position: fixed;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 99999;
+            opacity: 0;
+            pointer-events: none;
+            white-space: normal;
+            max-width: 350px;
+            min-width: 250px;
+        }
+
+        .danger-explanation.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .danger-explanation h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .danger-explanation p {
+            margin: 5px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .danger-explanation ul {
+            margin: 5px 0;
+            padding-left: 15px;
+        }
+
+        .danger-explanation li {
+            margin: 3px 0;
+            font-size: 12px;
+        }
+
+        .danger-explanation .loading {
+            text-align: center;
+            font-style: italic;
+        }
+
+        .danger-explanation .error {
+            color: #ffeb3b;
+            font-style: italic;
+        }
+
+    .typing-indicator {
+      display: none;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar">
+      <!-- HEADER: Logo + User Profile -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #E8DCC8;">
+        <img src="family-circle-logo.png" alt="Family Circle" class="app-logo" style="height: 60px;">
+        <div id="user-info" style="display: none;">
+          <div style="text-align: right;">
+            <div style="font-weight: 600; color: #333; font-size: 13px;" id="user-name">Loading...</div>
+            <div style="font-size: 11px; color: #666; margin-top: 2px;">🔑 <span id="family-code-display">PYSDGR</span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loading" id="loading">
+        Loading crime data...
+      </div>
+
+      <div id="members-container" style="display: none;">
+        <!-- FAMILY MEMBERS SECTION -->
+        <div class="section">
+          <div class="section-header" onclick="toggleSection('family')">
+            <span class="arrow" id="family-arrow">▼</span>
+            <span class="section-title">👥 Family Members</span>
+            <span class="count" id="family-count">(0)</span>
+          </div>
+          
+          <div class="section-content" id="family-content">
+            <!-- Family member cards will be dynamically added here -->
+            <div class="empty-state">
+              Waiting for family members to share their location...
+            </div>
+          </div>
+          <button onclick="showFamilyModal()" style="width: 100%; margin-top: 10px; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">👥 Invite Member</button>
+        </div>
+
+        <!-- CHECKED LOCATIONS SECTION -->
+        <div class="section">
+          <div class="section-header" onclick="toggleSection('locations')">
+            <span class="arrow" id="locations-arrow">▼</span>
+            <span class="section-title">📍 Checked Locations</span>
+            <span class="count" id="locations-count">(0)</span>
+          </div>
+          
+          <div class="section-content" id="locations-content">
+            <div id="locations-list"></div>
+            <div class="empty-state" id="empty-locations">
+              Click map or search to check a location
+            </div>
+          </div>
+          <button id="add-location-btn" onclick="toggleAddMode()" style="width: 100%; margin-top: 10px; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📍 Add Location</button>
+        </div>
+      </div>
+
+      <!-- SEARCH BOX (Hidden by default) -->
+      <div id="search-box" style="display: none; padding: 12px; background: #F8F4F0; border-radius: 8px; margin-bottom: 10px;">
+        <input type="text" id="location-search" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;" 
+               placeholder="Enter address (e.g., Golden Gate Park, SF)">
+        <div style="display: flex; gap: 8px;">
+          <button onclick="searchLocation()" style="flex: 1; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 4px; cursor: pointer;">Search</button>
+          <button onclick="cancelAdd()" style="flex: 1; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+        </div>
+        <div id="map-click-hint" style="display: none; margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">
+          💡 Click anywhere on the map to check that location
+        </div>
+      </div>
+
+      <!-- MAP CONTROLS -->
+      <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+        <div style="font-weight: 600; margin-bottom: 8px; font-size: 12px; color: #666;">🔧 Map Controls</div>
+        <button class="heatmap-toggle" id="heatmap-toggle" onclick="toggleHeatmap()" style="width: 100%; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; margin-bottom: 8px;">
+          🔥 Toggle Heatmap <span class="toggle-text">OFF</span>
+        </button>
+        <div id="news-status-container"></div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div style="padding-top: 10px; border-top: 2px solid #E8DCC8;">
+        <div style="font-weight: 600; margin-bottom: 8px; font-size: 12px; color: #666;">⚡ Quick Actions</div>
+        <button id="demo-button" onclick="startDemoMovement()" style="width: 100%; padding: 10px; background: #F0E2CB; color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;">🎬 Start Demo</button>
+      </div>
+      
+      <!-- Logout button at bottom -->
+      <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #E8DCC8;">
+        <button onclick="handleLogout()" style="width: 100%; padding: 8px; background: #F0E2CB; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Logout</button>
+      </div>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <!-- Chat Bubble -->
+  <div class="chat-bubble" id="chat-bubble" onclick="toggleChat()">
+    🤖
+  </div>
+
+  <!-- Chat Window -->
+  <div class="chat-window" id="chat-window">
+    <div class="chat-header">
+      <span>Safety Advisor</span>
+      <button class="chat-close" onclick="toggleChat()">×</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="message bot">
+        Hey! I'm your witty SF safety advisor 🗺️ Ask me anything about staying safe!
+      </div>
+    </div>
+    <div class="typing-indicator" id="typing-indicator">
+      Safety advisor is thinking...
+    </div>
+    <div class="chat-input-container">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Ask about safety..." onkeypress="handleChatKeyPress(event)">
+    </div>
+          </div>
+
+  <!-- Family Modal -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeFamilyModal()"></div>
+  <div class="modal" id="family-modal">
+    <div class="modal-header">
+      <h2>👥 My Family</h2>
+      <button class="modal-close" onclick="closeFamilyModal()">×</button>
+          </div>
+    <div class="modal-body">
+      <div class="family-code-section">
+        <h3>🔑 Your Family Code</h3>
+        <div class="code" id="modal-family-code">------</div>
+        <button onclick="copyFamilyCode()">📋 Copy Code</button>
+        </div>
+
+      <div class="modal-section">
+        <h3>Family Members (<span id="modal-member-count">0</span>)</h3>
+        <div id="modal-members-list">
+          <!-- Family members will be inserted here -->
+      </div>
+    </div>
+
+      <div class="modal-hint">
+        💡 <strong>Invite family members:</strong> Share your family code with them. They'll enter it when they create their account to join your circle.
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet Heat Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getDatabase, ref, set, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+    // Your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyGphPTMLX6q1uVXVr7RBYkmU4WRLIi1s",
+      authDomain: "safestep-9756c.firebaseapp.com",
+      databaseURL: "https://safestep-9756c-default-rtdb.firebaseio.com",
+      projectId: "safestep-9756c",
+      storageBucket: "safestep-9756c.firebasestorage.app",
+      messagingSenderId: "1012843646509",
+      appId: "1:1012843646509:web:5e14122c3238ce7492b2a4",
+      measurementId: "G-Q29HR2433P"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // Make globally available
+    window.firebaseAuth = auth;
+    window.firebaseDatabase = database;
+    window.firebaseSignOut = signOut;
+    window.firebaseRef = ref;
+    window.firebaseSet = set;
+    window.firebaseGet = get;
+    window.firebaseUpdate = update;
+    window.firebaseOnValue = onValue;
+    window.firebaseOnAuthStateChanged = onAuthStateChanged;
+
+    // Check if user is logged in
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // Not logged in, redirect to auth page
+        console.log('❌ Not logged in, redirecting to auth page');
+        window.location.href = '/auth.html';
+      } else {
+        console.log('✅ User logged in:', user.email);
+        window.currentUser = user;
+        
+        // Initialize the app now that we're authenticated
+        if (window.initializeApp) {
+          window.initializeApp();
+        }
+      }
+    });
+  </script>
+  
+  <script>
+    // Crime weights (severity scale)
+    const crimeWeights = {
+      'Homicide': 100,
+      'Rape': 95,
+      'Kidnapping': 90,
+      'Robbery': 80,
+      'Assault': 70,
+      'Human Trafficking': 95,
+      'Sex Offense': 85,
+      'Weapons Offense': 75,
+      'Arson': 65,
+      'Burglary': 30,
+      'Carjacking': 70,
+      'Motor Vehicle Theft': 30,
+      'Larceny Theft': 25,
+      'Drug Offense': 15,
+      'Stolen Property': 40,
+      'Embezzlement': 25,
+      'Vandalism': 20,
+      'Trespassing': 15,
+      'Disorderly Conduct': 12,
+      'Fraud': 18,
+      'Forgery': 15,
+      'Prostitution': 10,
+      'Traffic Violation': 5,
+      'Suspicious Activity': 8,
+      'Other': 10
+    };
+
+    // Calculate distance between two points using Haversine formula
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 3959; // Earth's radius in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // Get recency factor based on days ago
+    function getRecencyFactor(daysAgo) {
+      if (daysAgo <= 1) return 1.5;
+      if (daysAgo <= 3) return 1.2;
+      if (daysAgo <= 7) return 1.0;
+      if (daysAgo <= 14) return 0.8;
+      if (daysAgo <= 30) return 0.6;
+      if (daysAgo <= 60) return 0.4;
+      if (daysAgo <= 90) return 0.25;
+      return 0.1;
+    }
+
+    // Get time of day multiplier
+    function getTimeMultiplier(hour) {
+      if (hour >= 22 || hour < 5) return 1.3;
+      if (hour >= 18 && hour < 22) return 1.15;
+      if (hour >= 5 && hour < 8) return 0.9;
+      return 1.0;
+    }
+
+    // Calculate risk score for a location using Elasticsearch API
+    async function calculateRiskScoreElasticsearch(lat, lon, radiusMiles = 0.5) {
+      try {
+        const response = await fetch(`/api/crimes-nearby?lat=${lat}&lon=${lon}&radius=${radiusMiles}`);
+        const data = await response.json();
+        
+        if (!data.crimes) {
+          throw new Error('No crime data received');
+        }
+        
+        const nearbyIncidents = data.crimes;
+        console.log(`⚡ Elasticsearch returned ${nearbyIncidents.length} crimes for (${lat}, ${lon})`);
+        
+        return calculateRiskScoreFromIncidents(nearbyIncidents, radiusMiles);
+      } catch (error) {
+        console.error('Elasticsearch query failed:', error);
+        throw error;
+      }
+    }
+
+    // Calculate risk score for a location (legacy method with all incidents)
+    function calculateRiskScore(lat, lon, incidents, radiusMiles = 0.5) {
+      const nearbyIncidents = incidents.filter(incident => {
+        if (!incident.latitude || !incident.longitude) return false;
+        const distance = getDistance(lat, lon, parseFloat(incident.latitude), parseFloat(incident.longitude));
+        return distance <= radiusMiles;
+      });
+      
+      return calculateRiskScoreFromIncidents(nearbyIncidents, radiusMiles);
+    }
+
+    // Core risk calculation logic (shared by both methods)
+    function calculateRiskScoreFromIncidents(nearbyIncidents, radiusMiles = 0.5) {
+      let rawScore = 0;
+      let violentCount = 0;
+      let propertyCount = 0;
+      let otherCount = 0;
+      
+      nearbyIncidents.forEach(incident => {
+        const category = incident.incident_category || 'Other';
+        const weight = crimeWeights[category] || 10;
+        
+        const incidentDate = new Date(incident.incident_datetime);
+        const daysAgo = (Date.now() - incidentDate.getTime()) / (1000 * 60 * 60 * 24);
+        const recency = getRecencyFactor(daysAgo);
+        
+        const hour = incidentDate.getHours();
+        const timeMultiplier = getTimeMultiplier(hour);
+        
+        const incidentScore = weight * recency * timeMultiplier;
+        rawScore += incidentScore;
+        
+        if (weight >= 70) violentCount++;
+        else if (weight >= 25) propertyCount++;
+        else otherCount++;
+      });
+      
+      const normalizedScore = rawScore / 180; // Normalize over 180 days
+      const density = nearbyIncidents.length / (Math.PI * radiusMiles * radiusMiles);
+      const densityBoost = Math.min(1 + (density / 100), 2.0);
+      const finalScore = Math.round(normalizedScore * densityBoost);
+      
+      return {
+        score: finalScore,
+        violentCrimes: violentCount,
+        propertyCrimes: propertyCount,
+        otherCrimes: otherCount,
+        totalIncidents: nearbyIncidents.length,
+        density: density.toFixed(1)
+      };
+    }
+
+    // Get risk level from score
+    function getRiskLevel(score) {
+      // Four risk levels: Low (0-44, green), Moderate (45-84, orange), High (85-119, red), Extreme (120+, dark red)
+      if (score >= 120) {
+        return { level: 'EXTREME', color: '#800000', emoji: '🔴', description: 'Very dangerous' };
+      }
+      if (score >= 85) {
+        return { level: 'HIGH', color: '#DC143C', emoji: '🔴', description: 'Elevated risk' };
+      }
+      if (score >= 45) {
+        return { level: 'MODERATE', color: '#FF8C00', emoji: '🟠', description: 'Moderate risk' };
+      }
+      return { level: 'LOW', color: '#3CB371', emoji: '🟢', description: 'Low risk' };
+    }
+
+    // Initialize map
+    const map = L.map('map').setView([37.7965, -122.4186], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Global state for checked locations
+    let isAddingLocation = false;
+    let checkedLocations = [];
+    let locationCircles = [];
+    let crimeData = null; // Store crime data globally
+    
+    // Global state for heatmap
+    let allCrimeData = null; // Store all crime data for heatmap
+    let heatmapEnabled = false;
+    let heatmapLayer = null;
+
+    // Load all crime data for heatmap
+    async function loadCrimeDataForHeatmap() {
+      try {
+        console.log('🔥 Loading crime data for heatmap...');
+        const response = await fetch('/api/crime-data');
+        allCrimeData = await response.json();
+        console.log(`✅ Loaded ${allCrimeData.length} incidents for heatmap`);
+      } catch (error) {
+        console.error('❌ Failed to load heatmap data:', error);
+        allCrimeData = [];
+      }
+    }
+
+    // Toggle heatmap visibility
+    function toggleHeatmap() {
+      heatmapEnabled = !heatmapEnabled;
+      const toggleBtn = document.getElementById('heatmap-toggle');
+      const toggleText = toggleBtn.querySelector('.toggle-text');
+      
+      if (heatmapEnabled) {
+        createHeatmap();
+        toggleBtn.classList.add('active');
+        toggleText.textContent = 'ON';
+      } else {
+        if (heatmapLayer) {
+          map.removeLayer(heatmapLayer);
+          heatmapLayer = null;
+        }
+        toggleBtn.classList.remove('active');
+        toggleText.textContent = 'OFF';
+      }
+    }
+
+    // Create heatmap from crime data
+    function createHeatmap() {
+      if (heatmapLayer) {
+        map.removeLayer(heatmapLayer);
+      }
+
+      if (!allCrimeData || allCrimeData.length === 0) {
+        console.error('No crime data available for heatmap');
+        return;
+      }
+
+      // Convert crime data to heatmap points [lat, lon, intensity]
+      const heatPoints = [];
+      allCrimeData.forEach(incident => {
+        if (!incident.latitude || !incident.longitude) return;
+        
+        const lat = parseFloat(incident.latitude);
+        const lon = parseFloat(incident.longitude);
+        
+        // Get crime weight for intensity
+        const category = incident.incident_category || 'Other';
+        const weight = crimeWeights[category] || 10;
+        
+        // Calculate recency factor
+        const incidentDate = new Date(incident.incident_datetime);
+        const daysAgo = (Date.now() - incidentDate.getTime()) / (1000 * 60 * 60 * 24);
+        const recency = getRecencyFactor(daysAgo);
+        
+        // Intensity based on crime severity and recency
+        const intensity = (weight / 100) * recency;
+        
+        heatPoints.push([lat, lon, intensity]);
+      });
+
+      console.log(`✅ Created ${heatPoints.length} heatmap points`);
+
+      // Create heatmap layer
+      heatmapLayer = L.heatLayer(heatPoints, {
+        radius: 15,
+        blur: 20,
+        minOpacity: 0.2,
+        max: 0.6,
+        scaleRadius: false,
+        useLocalExtrema: false,
+        gradient: {
+          0.0: '#006400',
+          0.10: '#228B22',
+          0.20: '#32CD32',
+          0.30: '#3CB371',
+          0.31: '#FFFF00',
+          0.40: '#FFD700',
+          0.50: '#FFA500',
+          0.60: '#FF8C00',
+          0.61: '#FF6600',
+          0.70: '#FF4500',
+          0.80: '#FF0000',
+          0.90: '#DC143C',
+          0.95: '#B22222',
+          1.0: '#800000'
+        }
+      }).addTo(map);
+
+      console.log('🔥 Heatmap created successfully!');
+    }
+
+    // ========== REAL-TIME NEWS FUNCTIONALITY ==========
+
+    // Real-time incidents state
+    let allIncidents = [];
+
+    // Fetch real-time incidents from Currents API
+    async function fetchRealTimeIncidents() {
+      try {
+        const newsRes = await fetch('/api/news-incidents');
+        const newsData = await newsRes.json();
+        
+        // Extract incidents from response
+        allIncidents = newsData.incidents || [];
+        
+        // Store timestamp globally for live updates
+        window.lastNewsCheck = newsData.lastChecked;
+        
+        console.log(`📰 Fetched ${allIncidents.length} crime news incidents from Currents`);
+        console.log(`   Last checked: ${newsData.hoursChecked} hours ago`);
+        console.log(`   Enabled: ${newsData.enabled}`);
+        
+        // Update news status box
+        updateNewsStatus(newsData);
+        
+        // Update UI
+        updateIncidentAlerts();
+        
+      } catch (error) {
+        console.error('Error fetching real-time incidents:', error);
+      }
+    }
+
+    // Update news status display
+    function updateNewsStatus(newsData) {
+      const container = document.getElementById('news-status-container');
+      if (!container) return;
+      
+      const hoursAgo = newsData.hoursChecked;
+      
+      if (allIncidents.length === 0 && newsData.enabled) {
+        // Show "no significant crime news" message
+        container.innerHTML = `
+          <div class="news-status-box">
+            <div class="news-status-title">
+              ✅ No Significant Crime News
+            </div>
+            <div class="news-status-meta">
+              Tracking San Francisco neighborhoods<br>
+              Checked past ${hoursAgo} hours • Updated ${getTimeAgo(newsData.lastChecked)}
+            </div>
+          </div>
+        `;
+      } else if (allIncidents.length > 0) {
+        // Group incidents by neighborhood
+        const byNeighborhood = {};
+        allIncidents.forEach(inc => {
+          const hood = inc.neighborhood || 'San Francisco';
+          byNeighborhood[hood] = (byNeighborhood[hood] || 0) + 1;
+        });
+        
+        const neighborhoodBreakdown = Object.entries(byNeighborhood)
+          .map(([hood, count]) => `${hood} (${count})`)
+          .join(', ');
+        
+        // Build detailed incidents list
+        const incidentsList = allIncidents.map(inc => `
+          <div class="incident-item">
+            <div class="incident-title">${inc.title}</div>
+            <div class="incident-description">${inc.description || 'No details available'}</div>
+            <div class="incident-meta">
+              <span class="incident-source">📍 ${inc.neighborhood} · ${inc.source}</span>
+              <span class="incident-time">${getTimeAgo(inc.timestamp)}</span>
+            </div>
+          </div>
+        `).join('');
+        
+        // Show count of incidents with neighborhood breakdown and detailed list
+        container.innerHTML = `
+          <div class="news-status-box" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left-color: #ff9800; color: #e65100;">
+            <div class="news-status-title">
+              📰 ${allIncidents.length} Recent Crime Report${allIncidents.length > 1 ? 's' : ''}
+            </div>
+            <div class="news-status-meta" style="color: #ef6c00;">
+              ${neighborhoodBreakdown}<br>
+              From the past ${hoursAgo} hours • Updated ${getTimeAgo(newsData.lastChecked)}
+            </div>
+            <div class="incidents-list">
+              ${incidentsList}
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = '';
+      }
+    }
+
+    // Update incident alerts on location cards
+    function updateIncidentAlerts() {
+      // Get current family members from Firebase
+      if (currentFamilyData && currentFamilyData.members) {
+        Object.keys(currentFamilyData.members).forEach(memberId => {
+          const memberLocation = userMarkers[memberId];
+          if (memberLocation && memberLocation.locationData) {
+            const locationName = memberLocation.locationData.locationName;
+            if (locationName) {
+              // Extract neighborhood from "Neighborhood, San Francisco" format
+              const neighborhood = locationName.split(',')[0].trim();
+              
+              // Find incidents mentioning this neighborhood
+              const neighborhoodIncidents = allIncidents.filter(incident => {
+                return incident.neighborhood && 
+                       incident.neighborhood.toLowerCase() === neighborhood.toLowerCase();
+              });
+              
+              // Add alert badge if there are incidents
+              if (neighborhoodIncidents.length > 0) {
+                console.log(`🚨 ${neighborhoodIncidents.length} news alerts for ${neighborhood}`);
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // Get human-readable time ago
+    function getTimeAgo(timestamp) {
+      const minutes = Math.floor((Date.now() - timestamp) / 60000);
+      if (minutes < 1) return 'Just now';
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      return `${Math.floor(hours / 24)}d ago`;
+    }
+
+    // Start auto-refresh for real-time incidents
+    function startIncidentRefresh() {
+      // Initial fetch
+      fetchRealTimeIncidents();
+      
+      // Refresh every 2 minutes
+      setInterval(fetchRealTimeIncidents, 120000);
+      
+      // Update timestamps every 10 seconds
+      setInterval(() => {
+        const timeElements = document.querySelectorAll('.news-status-meta');
+        timeElements.forEach(el => {
+          if (window.lastNewsCheck) {
+            const newTimeAgo = getTimeAgo(window.lastNewsCheck);
+            el.innerHTML = el.innerHTML.replace(/Updated .*$/, `Updated ${newTimeAgo}`);
+          }
+        });
+      }, 10000);
+    }
+
+    // ========== CHAT FUNCTIONALITY ==========
+
+    // Chat state
+    let chatOpen = false;
+
+    // Toggle chat window
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      const chatWindow = document.getElementById('chat-window');
+      
+      if (chatOpen) {
+        chatWindow.style.display = 'flex';
+        document.getElementById('chat-input').focus();
+      } else {
+        chatWindow.style.display = 'none';
+      }
+    }
+
+    // Handle chat input keypress
+    function handleChatKeyPress(event) {
+      if (event.key === 'Enter') {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        
+        if (message) {
+          sendChatMessage(message);
+          input.value = '';
+        }
+      }
+    }
+
+    // Send message to Claude API
+    async function sendChatMessage(message) {
+      const messagesContainer = document.getElementById('chat-messages');
+      const typingIndicator = document.getElementById('typing-indicator');
+      
+      // Add user message
+      const userMessage = document.createElement('div');
+      userMessage.className = 'message user';
+      userMessage.textContent = message;
+      messagesContainer.appendChild(userMessage);
+      
+      // Show typing indicator
+      typingIndicator.style.display = 'block';
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      try {
+        // Get current user location and family data
+        const userLocation = window.currentUser ? 'San Francisco' : 'San Francisco';
+        const familyLocations = [];
+        
+        if (currentFamilyData && currentFamilyData.members) {
+          Object.keys(currentFamilyData.members).forEach(memberId => {
+            const memberLocation = userMarkers[memberId];
+            if (memberLocation && memberLocation.locationData) {
+              familyLocations.push({
+                name: memberLocation.locationData.name,
+                location: memberLocation.locationData.locationName
+              });
+            }
+          });
+        }
+        
+        // Send to Claude API
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: message,
+            userLocation: userLocation,
+            familyLocations: familyLocations
+          })
+        });
+        
+        const data = await response.json();
+        
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+        
+        // Add bot response
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.textContent = data.response;
+        messagesContainer.appendChild(botMessage);
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+      } catch (error) {
+        console.error('Chat error:', error);
+        
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+        
+        // Add error message
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message bot';
+        errorMessage.textContent = "Oops! I'm having a brain freeze 🧠❄️ (Try again in a sec)";
+        messagesContainer.appendChild(errorMessage);
+        
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+
+    // Toggle section collapse/expand
+    function toggleSection(sectionId) {
+      const content = document.getElementById(`${sectionId}-content`);
+      const arrow = document.getElementById(`${sectionId}-arrow`);
+      
+      content.classList.toggle('collapsed');
+      arrow.classList.toggle('collapsed');
+    }
+
+    // Toggle "add location" mode
+    function toggleAddMode() {
+      isAddingLocation = !isAddingLocation;
+      
+      const searchBox = document.getElementById('search-box');
+      const hint = document.getElementById('map-click-hint');
+      const btn = document.getElementById('add-location-btn');
+      
+      if (isAddingLocation) {
+        searchBox.style.display = 'block';
+        hint.style.display = 'block';
+        btn.textContent = '❌ Cancel';
+        btn.style.background = '#F0E2CB';
+        map.getContainer().style.cursor = 'crosshair';
+        map.on('click', onMapClick);
+      } else {
+        cancelAdd();
+      }
+    }
+
+    // Cancel adding location
+    function cancelAdd() {
+      isAddingLocation = false;
+      document.getElementById('search-box').style.display = 'none';
+      document.getElementById('map-click-hint').style.display = 'none';
+      document.getElementById('location-search').value = '';
+      
+      const btn = document.getElementById('add-location-btn');
+      btn.textContent = '📍 Add Location';
+      btn.style.background = '#F0E2CB';
+      
+      map.getContainer().style.cursor = '';
+      map.off('click', onMapClick);
+    }
+
+    // Handle map click
+    function onMapClick(e) {
+      if (!isAddingLocation) return;
+      
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+      
+      addCheckedLocation({
+        name: `Location ${checkedLocations.length + 1}`,
+        lat: lat,
+        lon: lon
+      });
+      
+      cancelAdd();
+    }
+
+    // Add a checked location
+    async function addCheckedLocation(location) {
+      try {
+        console.log(`🔍 Checking location: ${location.name} at (${location.lat}, ${location.lon})`);
+        
+        // Try Elasticsearch first
+        const risk = await calculateRiskScoreElasticsearch(location.lat, location.lon);
+        const riskLevel = getRiskLevel(risk.score);
+        
+        console.log(`⚡ Elasticsearch result: ${risk.score} - ${riskLevel.level}`);
+        
+        addLocationToMap(location, risk, riskLevel);
+        
+      } catch (error) {
+        console.log('⚠️ Elasticsearch failed, using fallback:', error.message);
+        
+        // Fallback to legacy method
+        if (!crimeData) {
+          alert('Crime data still loading. Please wait a moment.');
+          return;
+        }
+
+        const risk = calculateRiskScore(location.lat, location.lon, crimeData);
+        const riskLevel = getRiskLevel(risk.score);
+        
+        console.log(`🐌 JavaScript result: ${risk.score} - ${riskLevel.level}`);
+        
+        addLocationToMap(location, risk, riskLevel);
+      }
+    }
+
+    async function addLocationToMap(location, risk, riskLevel) {
+      // Check if this location already exists (check within 0.01 degrees)
+      const isDuplicate = checkedLocations.some(loc => 
+        Math.abs(loc.lat - location.lat) < 0.01 && Math.abs(loc.lon - location.lon) < 0.01
+      );
+      
+      if (isDuplicate) {
+        console.log('⚠️ Location already exists, skipping duplicate');
+        return;
+      }
+      
+      // Add to array
+      const newLocation = {
+        id: Date.now(),
+        name: location.name,
+        lat: location.lat,
+        lon: location.lon,
+        risk: risk,
+        riskLevel: riskLevel
+      };
+      
+      checkedLocations.push(newLocation);
+      
+      // Save to Firebase
+      try {
+        const user = window.currentUser;
+        if (user && user.uid) {
+          const savedLocationsRef = window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid + '/savedLocations');
+          const snapshot = await window.firebaseGet(savedLocationsRef);
+          const existingLocations = snapshot.exists() ? snapshot.val() : {};
+          
+          existingLocations[newLocation.id] = {
+            name: newLocation.name,
+            lat: newLocation.lat,
+            lon: newLocation.lon,
+            riskScore: risk.score,
+            riskLevel: riskLevel,
+            timestamp: Date.now()
+          };
+          
+          await window.firebaseSet(savedLocationsRef, existingLocations);
+        }
+      } catch (error) {
+        console.error('Error saving location:', error);
+      }
+      
+      // Draw dashed circle on map
+      const circle = L.circle([location.lat, location.lon], {
+        radius: 804.67,
+        fillColor: riskLevel.color,
+        fillOpacity: 0.25,
+        color: riskLevel.color,
+        weight: 2,
+        opacity: 0.5,
+        dashArray: '5, 5'
+      }).addTo(map);
+      
+      // Add pin marker with default or custom color
+      const defaultColor = '#1e3c72';
+      const markerColor = newLocation.cardColor || defaultColor;
+      const marker = L.marker([location.lat, location.lon], {
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="marker-pin" style="background: ${markerColor}; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 3px solid white;">📍</div>`,
+          iconSize: [35, 35],
+          iconAnchor: [17.5, 17.5]
+        })
+      }).addTo(map)
+        .bindPopup(`<b>${location.name}</b><br>Risk: ${risk.score} - ${riskLevel.level} ${riskLevel.emoji}`);
+      
+      locationCircles.push({ id: newLocation.id, circle, marker, cardColor: markerColor });
+      
+      // Update UI
+      renderLocations();
+      updateLocationCount();
+      
+      // Expand locations section if collapsed
+      document.getElementById('locations-content').classList.remove('collapsed');
+      document.getElementById('locations-arrow').classList.remove('collapsed');
+    }
+
+    // Remove a checked location
+    async function removeLocation(id) {
+      checkedLocations = checkedLocations.filter(loc => loc.id !== id);
+      
+      // Remove from Firebase
+      try {
+        const user = window.currentUser;
+        if (user && user.uid) {
+          const savedLocationsRef = window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid + '/savedLocations');
+          const snapshot = await window.firebaseGet(savedLocationsRef);
+          if (snapshot.exists()) {
+            const existingLocations = snapshot.val();
+            delete existingLocations[id];
+            await window.firebaseSet(savedLocationsRef, existingLocations);
+          }
+        }
+      } catch (error) {
+        console.error('Error removing location:', error);
+      }
+      
+      const mapItem = locationCircles.find(item => item.id === id);
+      if (mapItem) {
+        map.removeLayer(mapItem.circle);
+        map.removeLayer(mapItem.marker);
+      }
+      locationCircles = locationCircles.filter(item => item.id !== id);
+      
+      renderLocations();
+      updateLocationCount();
+    }
+
+    // Render location cards in sidebar
+    function renderLocations() {
+      const container = document.getElementById('locations-list');
+      const emptyState = document.getElementById('empty-locations');
+      
+      if (checkedLocations.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      emptyState.style.display = 'none';
+      
+      const cards = checkedLocations.map(loc => {
+        const card = document.createElement('div');
+        card.className = 'location-card';
+        card.id = `location-card-${loc.id}`;
+        
+        // Find the location circle entry
+        const locationEntry = locationCircles.find(l => l.id === loc.id);
+        
+        // Apply neutral card background
+        card.style.background = 'white';
+        
+        const riskLevel = loc.riskLevel.level || '';
+        const riskColor = loc.riskLevel.color || '#999';
+        const isDangerous = ['EXTREME', 'HIGH', 'MODERATE'].some(level => riskLevel.includes(level));
+        
+        // Always add clickable class and center on click, but only show explanation for dangerous locations
+        card.classList.add('clickable');
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+          // Always center map on this location
+          if (map) {
+            map.setView([loc.lat, loc.lon], 15, {
+              animate: true,
+              duration: 0.8
+            });
+          }
+          
+          // Only show danger explanation if it's a dangerous location
+          if (isDangerous) {
+            toggleDangerExplanation(card, loc.id, loc.name, loc.riskLevel.level, loc.lat, loc.lon);
+          }
+        };
+        
+        card.innerHTML = `
+          <div class="location-card-header" style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="location-name" style="display: flex; align-items: center; gap: 8px; color: #6c757d;">
+              📍 <span class="location-name-text" onclick="editLocationName(${loc.id})" id="loc-name-${loc.id}" style="color: #6c757d;">${loc.name}</span>
+            </div>
+            <button class="remove-btn" onclick="removeLocation(${loc.id})">Remove</button>
+          </div>
+          <div class="location-risk" style="margin-top: 8px;">
+            <div class="risk-level" style="background: ${riskColor}; color: white; padding: 6px 12px; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 12px;">
+            Danger Level: ${loc.riskLevel.level} ${loc.riskLevel.emoji}
+          </div>
+          </div>
+        `;
+        
+        return card;
+      });
+      
+      container.innerHTML = '';
+      cards.forEach(card => container.appendChild(card));
+    }
+
+    // Edit location name (inline)
+    function editLocationName(id) {
+      const location = checkedLocations.find(loc => loc.id === id);
+      if (!location) return;
+      
+      const nameElement = document.getElementById(`loc-name-${id}`);
+      const currentName = location.name;
+      
+      // Replace with input field
+      nameElement.outerHTML = `<input type="text" 
+        class="location-name-input" 
+        id="loc-name-input-${id}" 
+        value="${currentName}" 
+        onblur="saveLocationName(${id})" 
+        onkeypress="if(event.key==='Enter') saveLocationName(${id})">`;
+      
+      // Focus and select the input
+      const input = document.getElementById(`loc-name-input-${id}`);
+      input.focus();
+      input.select();
+    }
+
+    // Save location name
+    async function saveLocationName(id) {
+      const input = document.getElementById(`loc-name-input-${id}`);
+      if (!input) return;
+      
+      const newName = input.value.trim() || `Location ${checkedLocations.findIndex(l => l.id === id) + 1}`;
+      
+      // Update in array
+      const location = checkedLocations.find(loc => loc.id === id);
+      if (location) {
+        location.name = newName;
+        
+        // Update map popup
+        const mapItem = locationCircles.find(item => item.id === id);
+        if (mapItem && mapItem.marker) {
+          mapItem.marker.setPopupContent(
+            `<b>${newName}</b><br>Risk: ${location.risk.score} - ${location.riskLevel.level} ${location.riskLevel.emoji}`
+          );
+        }
+        
+        // Save to Firebase
+        try {
+          const user = window.currentUser;
+          if (user && user.uid) {
+            const savedLocationsRef = window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid + '/savedLocations');
+            const snapshot = await window.firebaseGet(savedLocationsRef);
+            if (snapshot.exists()) {
+              const existingLocations = snapshot.val();
+              if (existingLocations[id]) {
+                existingLocations[id].name = newName;
+                await window.firebaseSet(savedLocationsRef, existingLocations);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error saving location name:', error);
+        }
+      }
+      
+      // Re-render
+      renderLocations();
+    }
+
+    // Update location count
+    function updateLocationCount() {
+      document.getElementById('locations-count').textContent = `(${checkedLocations.length})`;
+    }
+
+    // Search location by address
+    function searchLocation() {
+      const query = document.getElementById('location-search').value.trim();
+      if (!query) {
+        alert('Please enter an address');
+        return;
+      }
+      
+      const input = document.getElementById('location-search');
+      const originalValue = input.value;
+      input.disabled = true;
+      input.value = 'Searching...';
+      
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', San Francisco')}&format=json&limit=1`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.length > 0) {
+            const result = data[0];
+            addCheckedLocation({
+              name: query,
+              lat: parseFloat(result.lat),
+              lon: parseFloat(result.lon)
+            });
+            
+            map.setView([result.lat, result.lon], 14);
+            cancelAdd();
+          } else {
+            alert('Location not found. Try clicking on the map instead.');
+            input.disabled = false;
+            input.value = originalValue;
+          }
+        })
+        .catch(err => {
+          console.error('Geocoding error:', err);
+          alert('Error searching location. Try clicking on the map.');
+          input.disabled = false;
+          input.value = originalValue;
+        });
+    }
+
+    // No hardcoded coordinates - all locations come from Firebase real-time database
+
+    // Global state for tracking users and markers
+    let userMarkers = {}; // Store markers for each user
+    let userCircles = {}; // Store risk circles for each user
+
+    // Global state for family
+    let currentFamilyData = null;
+
+    // Logout function
+    function handleLogout() {
+      if (confirm('Are you sure you want to logout?')) {
+        window.firebaseSignOut(window.firebaseAuth).then(() => {
+          console.log('✅ Logged out');
+          window.location.href = '/auth.html';
+        });
+      }
+    }
+
+
+    // Show family modal
+    async function showFamilyModal() {
+      document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('family-modal').style.display = 'block';
+      
+      // Load family data
+      if (currentFamilyData) {
+        await loadFamilyModalData();
+      }
+    }
+
+    // Close family modal
+    function closeFamilyModal() {
+      document.getElementById('modal-overlay').style.display = 'none';
+      document.getElementById('family-modal').style.display = 'none';
+    }
+
+    // Load family data into modal
+    async function loadFamilyModalData() {
+      try {
+        const user = window.currentUser;
+        
+        // Get user's family ID
+        const userSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid));
+        const familyId = userSnapshot.val().familyId;
+        
+        // Get family data
+        const familySnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'families/' + familyId));
+        const familyData = familySnapshot.val();
+        
+        if (familyData) {
+          // Show family code
+          document.getElementById('modal-family-code').textContent = familyData.code;
+          
+          // Get family member details
+          const memberIds = Object.keys(familyData.members);
+          const memberPromises = memberIds.map(id => 
+            window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users/' + id))
+          );
+          
+          const memberSnapshots = await Promise.all(memberPromises);
+          const members = memberSnapshots.map((snap, idx) => ({
+            id: memberIds[idx],
+            ...snap.val()
+          }));
+          
+          // Update member count
+          document.getElementById('modal-member-count').textContent = members.length;
+          
+          // Check if current user is the owner
+          const isOwner = familyData.owner === user.uid;
+          
+          // Render member list
+          const membersList = document.getElementById('modal-members-list');
+          membersList.innerHTML = members.map(member => `
+            <div class="family-member-item">
+              <div class="icon">${member.id === user.uid ? '📍' : '👤'}</div>
+              <div class="info">
+                <div class="name">${member.name || member.email}${member.id === user.uid ? ' (You)' : ''}${familyData.owner === member.id ? ' 👑' : ''}</div>
+                <div class="status">${member.email}</div>
+              </div>
+              ${isOwner && member.id !== user.uid ? '<button onclick="removeMember(\'' + member.id + '\')" style="padding: 4px 8px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">Remove</button>' : ''}
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading family data:', error);
+      }
+    }
+
+    // Remove a member from family (admin only)
+    async function removeMember(memberId) {
+      if (!confirm('Are you sure you want to remove this member from your family?')) {
+        return;
+      }
+      
+      try {
+        const user = window.currentUser;
+        const userSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid));
+        const familyId = userSnapshot.val().familyId;
+        
+        // Get family data to check ownership
+        const familySnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'families/' + familyId));
+        const familyData = familySnapshot.val();
+        
+        if (familyData.owner !== user.uid) {
+          alert('Only the family owner can remove members.');
+          return;
+        }
+        
+        // Remove from family members
+        await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'families/' + familyId + '/members'), {
+          [memberId]: null
+        });
+        
+        // Remove family ID from user
+        await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'users/' + memberId), {
+          familyId: null
+        });
+        
+        console.log('✅ Member removed:', memberId);
+        
+        // Reload modal to update list
+        await loadFamilyModalData();
+        
+      } catch (error) {
+        console.error('Error removing member:', error);
+        alert('Failed to remove member. Please try again.');
+      }
+    }
+
+    // Copy family code
+    function copyFamilyCode() {
+      const code = document.getElementById('modal-family-code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+
+    // Copy code from sidebar
+    function copyCodeFromSidebar() {
+      const code = document.getElementById('family-code-display').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = document.getElementById('family-code-display').textContent;
+        document.getElementById('family-code-display').textContent = '✓ Copied!';
+        setTimeout(() => {
+          document.getElementById('family-code-display').textContent = originalText;
+        }, 1500);
+      });
+    }
+
+    // Start tracking current user's location
+    function startLocationTracking() {
+      if (!('geolocation' in navigator)) {
+        alert('Geolocation is not supported by your browser');
+        return;
+      }
+
+      const updateLocation = () => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const user = window.currentUser;
+
+            console.log(`📍 Location updated: (${lat}, ${lon})`);
+
+            // Get location name via reverse geocoding
+            let locationName = 'Unknown Location';
+            try {
+              const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+              const geoData = await geoResponse.json();
+              
+              // Extract neighborhood and city
+              const neighborhood = geoData.address.neighbourhood || geoData.address.suburb || geoData.address.quarter || '';
+              const city = geoData.address.city || geoData.address.town || geoData.address.village || 'San Francisco';
+              
+              if (neighborhood) {
+                locationName = `${neighborhood}, ${city}`;
+              } else {
+                locationName = city;
+              }
+              
+              console.log(`📍 Location name: ${locationName}`);
+            } catch (error) {
+              console.log('⚠️ Could not get location name:', error);
+            }
+
+            // Calculate risk score for current location
+            try {
+              const risk = await calculateRiskScoreElasticsearch(lat, lon);
+              const riskLevel = getRiskLevel(risk.score);
+
+              // Update Firebase with new location and risk
+              await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'locations/' + user.uid), {
+                lat: lat,
+                lon: lon,
+                timestamp: Date.now(),
+                name: user.displayName || user.email,
+                locationName: locationName,
+                riskScore: risk.score,
+                riskLevel: riskLevel.level,
+                riskColor: riskLevel.color,
+                totalIncidents: risk.totalIncidents,
+                violentCrimes: risk.violentCrimes,
+                propertyCrimes: risk.propertyCrimes,
+                avatar: user.photoURL || null
+              });
+
+              console.log(`✅ Location saved to Firebase with risk score: ${risk.score}`);
+            } catch (error) {
+              console.error('❌ Error updating location:', error);
+            }
+          },
+          (error) => {
+            // Only log permission denied errors, ignore other geolocation errors silently
+            if (error.code === error.PERMISSION_DENIED) {
+              console.log('⚠️ Location permission denied. Enable location access to use FamilyCircle features.');
+            }
+            // Silently ignore other geolocation errors (location unavailable, etc.)
+          },
+          {
+            enableHighAccuracy: false, // Reduce accuracy but avoid CoreLocation errors
+            timeout: 10000,
+            maximumAge: 60000 // Accept cached location up to 1 minute old
+          }
+        );
+      };
+
+      // Update location immediately
+      updateLocation();
+
+      // Then update every 30 seconds
+      setInterval(updateLocation, 30000);
+      
+      console.log('✅ Location tracking started (updates every 30 seconds)');
+    }
+
+    // Initialize app with Firebase real-time tracking
+    async function initializeApp() {
+      try {
+        console.log('🔄 Initializing app with Firebase...');
+
+        const user = window.currentUser;
+        
+        // Check if user has a family
+        const userSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid));
+        const userData = userSnapshot.val();
+        
+        if (!userData || !userData.familyId) {
+          // No family, redirect to join-family page
+          console.log('⚠️ User has no family, redirecting...');
+          window.location.href = '/join-family.html';
+          return;
+        }
+
+        // Get family data
+        const familySnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'families/' + userData.familyId));
+        currentFamilyData = familySnapshot.val();
+        
+        if (!currentFamilyData) {
+          console.error('❌ Family data not found');
+          alert('Family not found. Please contact support.');
+          return;
+        }
+
+        console.log('✅ Family loaded:', currentFamilyData.code);
+        
+        // Show user info in sidebar
+        document.getElementById('user-name').textContent = user.displayName || 'User';
+        document.getElementById('family-code-display').textContent = currentFamilyData.code;
+        document.getElementById('family-code-display').onclick = copyCodeFromSidebar;
+        document.getElementById('family-code-display').style.cursor = 'pointer';
+        document.getElementById('user-info').style.display = 'block';
+        
+        // Hide loading, show members container
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('members-container').style.display = 'block';
+
+        // Start tracking current user's location
+        startLocationTracking();
+
+        // Load crime data for heatmap
+        loadCrimeDataForHeatmap();
+
+        // Start news API refresh
+        startIncidentRefresh();
+        
+        // Load current user's saved card color
+        const currentUserRef = window.firebaseRef(window.firebaseDatabase, 'users/' + user.uid);
+        window.firebaseOnValue(currentUserRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            if (userData.cardColor) {
+              userMarkers[user.uid] = userMarkers[user.uid] || {};
+              userMarkers[user.uid].cardColor = userData.cardColor;
+              // Trigger a card update to apply the color
+              const card = document.getElementById(`user-card-${user.uid}`);
+              if (card) {
+                const lighterColor = adjustColorBrightness(userData.cardColor, 20);
+                card.style.background = `linear-gradient(135deg, ${userData.cardColor} 0%, ${lighterColor} 100%)`;
+              }
+            }
+            
+            // Load saved locations
+            if (userData.savedLocations) {
+              Object.keys(userData.savedLocations).forEach(async (locId) => {
+                const locData = userData.savedLocations[locId];
+                
+                // Check if location already exists (avoid duplicates)
+                const isDuplicate = checkedLocations.some(loc => 
+                  loc.id === parseInt(locId) || 
+                  (Math.abs(loc.lat - locData.lat) < 0.01 && Math.abs(loc.lon - locData.lon) < 0.01)
+                );
+                
+                if (isDuplicate) {
+                  console.log(`⚠️ Skipping duplicate location: ${locData.name}`);
+                  return;
+                }
+                
+                const location = {
+                  name: locData.name,
+                  lat: locData.lat,
+                  lon: locData.lon
+                };
+                
+                const riskLevel = locData.riskLevel || { level: 'Unknown', color: '#999', emoji: '❓' };
+                
+                // Add to checked locations array
+                checkedLocations.push({
+                  id: parseInt(locId),
+                  name: locData.name,
+                  lat: locData.lat,
+                  lon: locData.lon,
+                  risk: { score: locData.riskScore || 0 },
+                  riskLevel: riskLevel,
+                  cardColor: locData.cardColor
+                });
+                
+                // Draw on map
+                const circle = L.circle([locData.lat, locData.lon], {
+                  radius: 804.67,
+                  fillColor: riskLevel.color,
+                  fillOpacity: 0.25,
+                  color: riskLevel.color,
+                  weight: 2,
+                  opacity: 0.5,
+                  dashArray: '5, 5'
+                }).addTo(map);
+                
+                const defaultColor = '#1e3c72';
+                const markerColor = locData.cardColor || defaultColor;
+                const marker = L.marker([locData.lat, locData.lon], {
+                  icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div class="marker-pin" style="background: ${markerColor}; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 3px solid white;">📍</div>`,
+                    iconSize: [35, 35],
+                    iconAnchor: [17.5, 17.5]
+                  })
+                }).addTo(map)
+                  .bindPopup(`<b>${locData.name}</b><br>Risk: ${locData.riskScore || 0} - ${riskLevel.level} ${riskLevel.emoji}`);
+                
+                locationCircles.push({ id: parseInt(locId), circle, marker, cardColor: markerColor });
+              });
+              
+              renderLocations();
+              updateLocationCount();
+            }
+          }
+        });
+
+        // Listen for family member updates in real-time
+        const familyRef = window.firebaseRef(window.firebaseDatabase, 'families/' + userData.familyId);
+        window.firebaseOnValue(familyRef, (snapshot) => {
+          const familyData = snapshot.val();
+          if (familyData && familyData.members) {
+            const familyMemberIds = Object.keys(familyData.members);
+        console.log(`👥 Tracking ${familyMemberIds.length} family members:`, familyMemberIds);
+        
+        // Set up listener for each family member
+        familyMemberIds.forEach(memberId => {
+          const memberLocationRef = window.firebaseRef(window.firebaseDatabase, 'locations/' + memberId);
+              
+              // Also load saved card color
+              const userRef = window.firebaseRef(window.firebaseDatabase, 'users/' + memberId);
+              window.firebaseOnValue(userRef, async (userSnapshot) => {
+                if (userSnapshot.exists()) {
+                  const userData = userSnapshot.val();
+                  if (userData.cardColor) {
+                    userMarkers[memberId] = userMarkers[memberId] || {};
+                    userMarkers[memberId].cardColor = userData.cardColor;
+                    
+                    // Update the card and marker for this user
+                    const card = document.getElementById(`user-card-${memberId}`);
+                    if (card) {
+                      const lighterColor = adjustColorBrightness(userData.cardColor, 20);
+                      card.style.background = `linear-gradient(135deg, ${userData.cardColor} 0%, ${lighterColor} 100%)`;
+                    }
+                    
+                    // Update map marker
+                    if (userMarkers[memberId]?.marker) {
+                      const isCurrentUser = memberId === window.currentUser.uid;
+                      const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div class="marker-pin" style="background: ${userData.cardColor}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 3px solid white;">
+                            ${isCurrentUser ? '🐶' : '👤'}
+                          </div>`,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                      });
+                      userMarkers[memberId].marker.setIcon(icon);
+                    }
+                  }
+                }
+              });
+              
+          window.firebaseOnValue(memberLocationRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const locationData = snapshot.val();
+              // Create a locations object with just this member
+              const locations = { [memberId]: locationData };
+              updateAllUserMarkers(locations);
+            }
+          });
+            });
+          }
+        });
+
+        // HARDCODED: Add Brandon Tran in Fisherman's Wharf (For Testing)
+        const hardcodedBrandon = {
+          'brandon-tran-hardcoded': {
+            lat: 37.8085,
+            lon: -122.4158,
+            timestamp: Date.now(),
+            name: 'Brandon Tran',
+            locationName: 'Fishermans Wharf, San Francisco',
+            riskScore: 25,
+            riskLevel: getRiskLevel(25).level,
+            riskColor: getRiskLevel(25).color,
+            cardColor: '#FF69B4'
+          }
+        };
+        setTimeout(() => updateAllUserMarkers(hardcodedBrandon), 2000);
+
+        // Simulate Brandon moving from Fisherman's Wharf to Tenderloin (EXTREME danger zone)
+        // Global variables for demo button
+        window.brandonMovementStep = 0;
+        window.isDemoRunning = false;
+        const movementPath = [
+          { lat: 37.8085, lon: -122.4158, locationName: 'Fishermans Wharf, San Francisco', time: 2000 },      // Fisherman's Wharf (LOW - 25)
+          { lat: 37.8000, lon: -122.4164, locationName: 'North Beach, San Francisco', time: 2000 },     // Moving south (LOW-MOD - 40)
+          { lat: 37.7900, lon: -122.4164, locationName: 'Russian Hill, San Francisco', time: 2000 },    // Getting closer (MODERATE - 60)
+          { lat: 37.7850, lon: -122.4164, locationName: 'San Francisco', time: 2000 },    // Approaching Tenderloin (MOD-HIGH - 90)
+          { lat: 37.7833, lon: -122.4164, locationName: 'Tenderloin, San Francisco', time: 2000 }    // Tenderloin (EXTREME - 250)
+        ];
+
+        window.startDemoMovement = function() {
+          if (window.isDemoRunning) return;
+          
+          const demoButton = document.getElementById('demo-button');
+          if (demoButton) {
+            demoButton.textContent = '⏸️ Demo Running';
+            demoButton.disabled = true;
+            demoButton.style.background = '#95a5a6';
+          }
+          
+          window.isDemoRunning = true;
+          window.brandonMovementStep = 0;
+          
+          // Reset Brandon to starting position
+          hardcodedBrandon['brandon-tran-hardcoded'].lat = movementPath[0].lat;
+          hardcodedBrandon['brandon-tran-hardcoded'].lon = movementPath[0].lon;
+          hardcodedBrandon['brandon-tran-hardcoded'].locationName = movementPath[0].locationName;
+          hardcodedBrandon['brandon-tran-hardcoded'].riskScore = 25;
+          hardcodedBrandon['brandon-tran-hardcoded'].riskLevel = getRiskLevel(25).level;
+          hardcodedBrandon['brandon-tran-hardcoded'].riskColor = getRiskLevel(25).color;
+          updateAllUserMarkers(hardcodedBrandon);
+          
+          window.simulateBrandonMovement();
+        }
+
+        window.simulateBrandonMovement = function() {
+          if (window.brandonMovementStep >= movementPath.length - 1) {
+            // Demo complete, reset button
+            const demoButton = document.getElementById('demo-button');
+            if (demoButton) {
+              demoButton.textContent = '🔄 Replay Demo';
+              demoButton.disabled = false;
+              demoButton.style.background = '#F0E2CB';
+            }
+            window.isDemoRunning = false;
+            return;
+          }
+          
+          const currentStep = movementPath[window.brandonMovementStep];
+          const nextStep = movementPath[window.brandonMovementStep + 1];
+          
+          if (!nextStep) return;
+          
+          setTimeout(() => {
+            // Move Brandon to next location
+            hardcodedBrandon['brandon-tran-hardcoded'].lat = nextStep.lat;
+            hardcodedBrandon['brandon-tran-hardcoded'].lon = nextStep.lon;
+            hardcodedBrandon['brandon-tran-hardcoded'].locationName = nextStep.locationName;
+            hardcodedBrandon['brandon-tran-hardcoded'].timestamp = Date.now();
+            
+            // Calculate risk score for new location (simulated scores based on movement)
+            const scoresByStep = [25, 40, 60, 90, 250];
+            const newScore = scoresByStep[window.brandonMovementStep + 1];
+            hardcodedBrandon['brandon-tran-hardcoded'].riskScore = newScore;
+            hardcodedBrandon['brandon-tran-hardcoded'].riskLevel = getRiskLevel(newScore).level;
+            hardcodedBrandon['brandon-tran-hardcoded'].riskColor = getRiskLevel(newScore).color;
+            
+            // Update marker on map
+            updateAllUserMarkers(hardcodedBrandon);
+            
+            // Check if entered EXTREME danger zone
+            if (newScore >= 200) {
+              showDangerAlert('Brandon Tran', getRiskLevel(newScore).level);
+            }
+            
+            window.brandonMovementStep++;
+            if (window.brandonMovementStep < movementPath.length - 1) {
+              window.simulateBrandonMovement();
+            } else {
+              // Demo complete
+              const demoButton = document.getElementById('demo-button');
+              if (demoButton) {
+                demoButton.textContent = '🔄 Replay Demo';
+                demoButton.disabled = false;
+                demoButton.style.background = '#F0E2CB';
+              }
+              window.isDemoRunning = false;
+            }
+          }, currentStep.time);
+        }
+
+        console.log('✅ App initialized with family-filtered tracking');
+        
+        } catch (error) {
+        console.error('❌ Error initializing app:', error);
+        document.getElementById('loading').textContent = 'Error initializing app. Please refresh.';
+      }
+    }
+
+    // Show danger alert notification
+    function showDangerAlert(personName, dangerLevel) {
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.id = 'danger-alert-notification';
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #FF0000;
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(255, 0, 0, 0.5);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.5s ease-out;
+      `;
+      notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <div style="font-size: 32px;">🚨</div>
+          <div>
+            <div style="font-weight: 700; font-size: 18px;">DANGER ALERT</div>
+            <div style="font-size: 12px; opacity: 0.9;">${dangerLevel} Threat</div>
+          </div>
+        </div>
+        <div style="font-size: 14px; line-height: 1.6;">
+          <strong>${personName}</strong> has entered a ${dangerLevel.toLowerCase()} danger zone.
+          <br><br>
+          ${personName} has been alerted and advised to leave the area.
+          <br><br>
+          <strong>⚠️ Monitor their location closely.</strong>
+        </div>
+        <button onclick="this.parentElement.remove()" style="margin-top: 12px; padding: 8px 16px; background: rgba(255,255,255,0.2); border: 2px solid white; border-radius: 6px; color: white; cursor: pointer; font-weight: 600;">
+          Dismiss
+        </button>
+      `;
+      
+      // Add CSS animation
+      if (!document.getElementById('danger-alert-style')) {
+        const style = document.createElement('style');
+        style.id = 'danger-alert-style';
+        style.textContent = `
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(255, 0, 0, 0.5); }
+            50% { box-shadow: 0 8px 48px rgba(255, 0, 0, 0.8); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Remove any existing notification
+      const existing = document.getElementById('danger-alert-notification');
+      if (existing) existing.remove();
+      
+      document.body.appendChild(notification);
+      
+      // Auto-dismiss after 15 seconds
+      setTimeout(() => {
+        if (notification && notification.parentElement) {
+          notification.style.animation = 'slideIn 0.5s ease-out reverse';
+          setTimeout(() => notification.remove(), 500);
+        }
+      }, 15000);
+    }
+
+    // Update all user markers on the map
+    function updateAllUserMarkers(locations) {
+      const colors = ['#667eea', '#f5576c', '#56ab2f', '#ff9800', '#e91e63', '#9c27b0'];
+      let colorIndex = 0;
+
+      Object.keys(locations).forEach((userId) => {
+        const location = locations[userId];
+        const isCurrentUser = userId === window.currentUser.uid;
+        
+        // Skip if no coordinates
+        if (!location.lat || !location.lon) return;
+        
+        // Skip if this is a non-hardcoded Brandon Tran (filter out real user entries with same name)
+        if (location.name === 'Brandon Tran' && userId !== 'brandon-tran-hardcoded') {
+          return;
+        }
+
+        // Get or assign color
+        if (!userMarkers[userId]) {
+          userMarkers[userId] = { color: colors[colorIndex % colors.length] };
+          colorIndex++;
+        }
+
+        // Use neutral gray for all markers
+        const userColor = '#6c757d'; // Neutral gray
+        const riskColor = location.riskColor || '#999';
+
+        // Remove old marker and circle if they exist
+        if (userMarkers[userId].marker) {
+          map.removeLayer(userMarkers[userId].marker);
+        }
+        if (userCircles[userId]) {
+          map.removeLayer(userCircles[userId]);
+        }
+
+        // Create/update risk circle
+        const circle = L.circle([location.lat, location.lon], {
+          radius: 804.67, // 0.5 mile
+          fillColor: riskColor,
+          fillOpacity: 0.25,
+          color: riskColor,
+          weight: 2,
+          opacity: 0.5
+        }).addTo(map);
+
+        userCircles[userId] = circle;
+
+        // Create marker icon (neutral gray)
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="marker-pin" style="background: ${userColor}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 3px solid white;">
+              ${isCurrentUser ? '🐶' : '👤'}
+            </div>`,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+
+        // Create marker
+        const marker = L.marker([location.lat, location.lon], { 
+          icon: icon,
+          draggable: false
+        })
+        .addTo(map)
+        .bindPopup(`
+          <b>${location.name}${isCurrentUser ? ' (You)' : ''}</b><br>
+          Risk Score: ${location.riskScore || '?'}<br>
+          ${location.riskLevel || 'Unknown'}<br>
+          <small>Updated: ${new Date(location.timestamp).toLocaleTimeString()}</small>
+        `);
+
+        userMarkers[userId].marker = marker;
+
+        // Update sidebar card if it exists
+        updateSidebarCard(userId, location, isCurrentUser);
+      });
+
+      // Center map on current user if this is first load
+      const currentLocation = locations[window.currentUser.uid];
+      if (currentLocation && currentLocation.lat && currentLocation.lon) {
+        if (!window.mapCentered) {
+          map.setView([currentLocation.lat, currentLocation.lon], 13);
+          window.mapCentered = true;
+        }
+      }
+    }
+
+    // Update sidebar card for a user
+    function updateSidebarCard(userId, location, isCurrentUser) {
+      const container = document.getElementById('family-content');
+      
+      // Remove empty state if it exists
+      const emptyState = container.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      let card = document.getElementById(`user-card-${userId}`);
+
+      if (!card) {
+        // Create new card
+        card = document.createElement('div');
+        card.id = `user-card-${userId}`;
+        card.className = 'member-card';
+        container.appendChild(card);
+      }
+
+      // Get risk color for danger level indicator
+      const riskColor = location.riskColor || '#999';
+      
+      // Apply neutral card background
+      card.style.background = 'white';
+      card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+
+      // Update card content with location name
+      const displayLocation = location.locationName || `Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}`;
+      
+      card.innerHTML = `
+        <div class="member-name" style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="display: flex; align-items: center; gap: 8px;">
+          ${location.avatar ? `<img src="${location.avatar}" alt="Avatar" class="member-avatar">` : '👤'} ${location.name}${isCurrentUser ? ' (You)' : ''}
+          </span>
+        </div>
+        <div class="member-location">
+          <span class="location-icon">📍</span>
+          <span>${displayLocation}</span>
+        </div>
+        <div class="risk-score" style="margin-top: 8px;">
+          <div class="risk-level" id="risk-level-${userId}" style="background: ${riskColor}; color: white; padding: 6px 12px; border-radius: 6px; display: inline-block; font-weight: 600;">
+            Danger Level: ${location.riskLevel || 'Calculating...'}
+            </div>
+        </div>
+      `;
+
+      // Add click handler - always center map, but only show explanation for dangerous locations
+      const riskLevel = location.riskLevel || '';
+      card.classList.add('clickable');
+      card.style.cursor = 'pointer';
+      card.onclick = () => {
+        // Always center map on this person/location
+        if (map) {
+          map.setView([location.lat, location.lon], 15, {
+            animate: true,
+            duration: 0.8
+          });
+        }
+        
+        // Only show danger explanation if it's a dangerous location
+        if (['EXTREME', 'HIGH', 'MODERATE'].some(level => riskLevel.includes(level))) {
+          toggleDangerExplanation(card, userId, location.name || location.locationName, location.riskLevel, location.lat, location.lon);
+        }
+      };
+
+      // Update family count
+      const userCards = container.querySelectorAll('.member-card');
+      document.getElementById('family-count').textContent = `(${userCards.length})`;
+    }
+
+    // Toggle danger explanation by expanding/collapsing the card
+    async function toggleDangerExplanation(card, userId, locationName, dangerLevel, lat, lon) {
+      const explanationId = `danger-explanation-${userId}`;
+      let explanationDiv = document.getElementById(explanationId);
+      
+      // If already expanded, collapse it
+      if (card.classList.contains('expanded')) {
+        explanationDiv.remove();
+        card.classList.remove('expanded');
+        return;
+      }
+      
+      // Expand the card
+      card.classList.add('expanded');
+      
+      // Create explanation div
+      explanationDiv = document.createElement('div');
+      explanationDiv.id = explanationId;
+      explanationDiv.className = 'danger-explanation-expanded';
+      explanationDiv.innerHTML = '<p><strong>Loading explanation...</strong></p>';
+      card.appendChild(explanationDiv);
+      
+      // Fetch and display explanation
+      try {
+        const response = await fetch('/api/explain-danger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ location: locationName, dangerLevel, lat, lon })
+        });
+        
+        const data = await response.json();
+        // Format the explanation with bullet points
+        const formattedExplanation = formatExplanationBullets(data.explanation);
+        explanationDiv.innerHTML = formattedExplanation;
+      } catch (error) {
+        console.error('Error fetching danger explanation:', error);
+        explanationDiv.innerHTML = '<p><strong>Error:</strong> Unable to load explanation.</p>';
+      }
+    }
+
+    // Format explanation into bullet points
+    function formatExplanationBullets(text) {
+      // Split by line breaks or common patterns
+      const points = text.split(/\n|\.\s+(?=[A-Z])/).filter(p => p.trim().length > 10);
+      if (points.length <= 1) {
+        // If no natural breaks, just display as is
+        return `<p>${text}</p>`;
+      }
+      // Create bullet points
+      const bullets = points.slice(0, 4).map(point => {
+        const cleanPoint = point.trim().replace(/^[•\-\*]\s*/, '').replace(/\.$/, '');
+        return `<p>• ${cleanPoint}</p>`;
+      }).join('');
+      return bullets;
+    }
+
+    // Helper function to lighten/darken color
+    function adjustColorBrightness(color, percent) {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255))
+        .toString(16).slice(1);
+    }
+
+    // Change card color for a user
+    async function changeCardColor(userId, newColor) {
+      // Store the custom color
+      if (!userMarkers[userId]) {
+        userMarkers[userId] = {};
+      }
+      userMarkers[userId].cardColor = newColor;
+      
+      // Save to Firebase if current user
+      if (userId === window.currentUser.uid) {
+        try {
+          await window.firebaseUpdate(window.firebaseRef(window.firebaseDatabase, 'users/' + userId), {
+            cardColor: newColor
+          });
+        } catch (error) {
+          console.error('Error saving card color:', error);
+        }
+      }
+      
+      // Update the card background
+      const card = document.getElementById(`user-card-${userId}`);
+      if (card) {
+        card.style.background = 'white';
+      }
+      
+      // Update the map marker icon
+      if (userMarkers[userId]?.marker) {
+        const isCurrentUser = userId === window.currentUser.uid;
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="marker-pin" style="background: ${newColor}; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 3px solid white;">
+              ${isCurrentUser ? '🐶' : '👤'}
+            </div>`,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        });
+        userMarkers[userId].marker.setIcon(icon);
+      }
+    }
+
+
+
+    // App initialization is triggered by Firebase auth state change (see Firebase SDK script above)
+  </script>
+</body>
+</html>

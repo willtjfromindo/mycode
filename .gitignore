@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Cache files
+crime-data-cache.json
+
+# Environment variables
+.env
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Firebase credentials
+serviceAccountKey.json
+
+node_modules/
+.env
+dist/
+build/
+elasticsearch-8.11.0/
+elasticsearch.tar.gz
+node-v18.18.0-darwin-arm64/
+node.pkg
+crime-data-cache.json
+node_modules/
